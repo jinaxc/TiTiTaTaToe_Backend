@@ -21,7 +21,7 @@ public interface Game {
     boolean isEmpty(int boardCount,int x,int y);
     /**
      *
-     * @return 0 game not end; 1 first player win, 2 second player win,3 drawGame
+     * @return 3 drawGame; 1 first player win, 2 second player win,0 game not end
      */
     int checkWin();
 }

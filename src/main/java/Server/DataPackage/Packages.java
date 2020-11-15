@@ -23,8 +23,7 @@ public class Packages {
         for(int i = 0;i < 9;i++)
             for(int j = 0;j < 3;j++)
                 for(int k = 0;k < 3;k++){
-                    if(board[i][j][k] == 0)
-                        data.append(board[i][j][k]);
+                    data.append(board[i][j][k]);
                 }
         data.append(nextPos);
         data.append(winInfo);

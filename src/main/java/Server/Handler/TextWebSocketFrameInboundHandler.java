@@ -17,7 +17,7 @@ import org.apache.logging.log4j.Logger;
 public class TextWebSocketFrameInboundHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
 
     private final static Logger LOGGER = LogManager.getLogger(TextWebSocketFrameInboundHandler.class);
-    private TicTacServer server;
+    private final TicTacServer server;
 
     public TextWebSocketFrameInboundHandler(TicTacServer server) {
         this.server = server;
@@ -29,16 +29,23 @@ public class TextWebSocketFrameInboundHandler extends SimpleChannelInboundHandle
                 .HandshakeComplete) {
             ctx.pipeline().remove(HttpRequestHandler.class);
             server.getChannels().add((SocketChannel) ctx.channel());
+            LOGGER.info("connection success from {}",ctx.channel().remoteAddress());
+            ctx.writeAndFlush(new TextWebSocketFrame(Packages.ConnectionPackage().toString()));
+            SocketChannel c1 = null;
+            SocketChannel c2 = null;
             synchronized (server.getChannels()) {
                 if (server.getChannels().size() == 2) {
-                    SocketChannel c1 = server.getChannels().get(0);
-                    SocketChannel c2 = server.getChannels().get(1);
-                    GameHandler gameHandler = new GameHandler(c1,c2);
-                    c1.pipeline().addLast(gameHandler);
-                    c2.pipeline().addLast(gameHandler);
+                    c1 = server.getChannels().get(0);
+                    c2 = server.getChannels().get(1);
                 }
             }
-            ctx.writeAndFlush(new TextWebSocketFrame(Packages.ConnectionPackage().toString()));
+            if(c1 != null && c2 != null){
+                GameHandler gameHandler = new GameHandler(c1,c2);
+                c1.pipeline().addLast(gameHandler);
+                c2.pipeline().addLast(gameHandler);
+                c1.writeAndFlush(new TextWebSocketFrame(Packages.GameStartPackage(0).toString()));
+                c2.writeAndFlush(new TextWebSocketFrame(Packages.GameStartPackage(1).toString()));
+            }
         } else {
             super.userEventTriggered(ctx, evt);
         }

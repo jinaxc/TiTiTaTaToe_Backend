@@ -1,5 +1,6 @@
 package Server;
 
+import Server.Handler.ChannelInactiveHandler;
 import Server.Handler.HttpRequestHandler;
 import Server.Handler.TextWebSocketFrameInboundHandler;
 import io.netty.bootstrap.ServerBootstrap;
@@ -51,7 +52,8 @@ public class TicTacServer {
                         @Override
                         public void initChannel(SocketChannel ch) {
                             ChannelPipeline pipeline = ch.pipeline();
-                            pipeline.addLast(new IdleStateHandler(60,60, 0));
+                            pipeline.addLast(new ChannelInactiveHandler(s));
+//                            pipeline.addLast(new IdleStateHandler(60,60, 0));
                             pipeline.addLast(new HttpServerCodec());
                             pipeline.addLast(new HttpObjectAggregator(64 * 1024));
                             pipeline.addLast(new HttpRequestHandler("/ws"));

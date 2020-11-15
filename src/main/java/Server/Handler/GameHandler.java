@@ -5,22 +5,26 @@ import Chess.Utils.DefaultGame;
 import Server.DataPackage.Packages;
 import Server.Utils.RequestCode;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.util.CharsetUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.nio.file.attribute.UserDefinedFileAttributeView;
 
 
 /**
  * @author jinaxCai
  */
+@ChannelHandler.Sharable
 public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
     private final static Logger LOGGER = LogManager.getLogger(GameHandler.class);
-    private SocketChannel[] channels;
-    private Game game = new DefaultGame();
+    private final SocketChannel[] channels;
+    private final Game game = new DefaultGame();
 
     public GameHandler(SocketChannel channel1,SocketChannel channel2) {
         this.channels = new SocketChannel[2];
@@ -28,10 +32,22 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
         channels[1] = channel2;
     }
 
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        if(ctx.channel() == channels[0]){
+            channels[1].close();
+            //TODO
+        }else{
+            channels[0].close();
+            //TODO
+        }
+        ctx.fireChannelInactive();
+    }
+
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
         CharSequence charSequence = msg.readCharSequence(msg.readableBytes(), CharsetUtil.UTF_8);
         String command = charSequence.toString();
-        LOGGER.info("receive message from {}, message is {}",ctx.channel().remoteAddress(),command);
+
         handleCommand((SocketChannel) ctx.channel(),command);
     }
 
@@ -41,6 +57,7 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
         int requestCode = Integer.parseInt(s[0]);
         switch (requestCode){
             case RequestCode.PUT:{
+                LOGGER.info("receive message PUT, message is {}",command);
                 String place = s[1];
                 int boardCount = place.charAt(0) - '0';
                 int x = place.charAt(1) - '0';
@@ -56,10 +73,11 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
                 }
                 boolean put = game.put(boardCount, x, y, player);
                 if(!put){
-                    source.writeAndFlush(Packages.FailPutPackage());
+                    source.writeAndFlush(new TextWebSocketFrame(Packages.FailPutPackage().toString()));
                 }else{
                     int checkWin = game.checkWin();
-                    source.writeAndFlush(Packages.SuccessPutPackage(player,game.getBoard(),game.getNextPos(),checkWin));
+                    channels[0].writeAndFlush(new TextWebSocketFrame(Packages.SuccessPutPackage(player,game.getBoard(),game.getNextPos(),checkWin).toString()));
+                    channels[1].writeAndFlush(new TextWebSocketFrame(Packages.SuccessPutPackage(player,game.getBoard(),game.getNextPos(),checkWin).toString()));
                 }
             }
             default://TODO

@@ -15,6 +15,8 @@ public class DefaultGame implements Game {
     private int[][][] board; // 0 not put,1 p1 put,2 p2 put
 
     public DefaultGame() {
+        currentPlayer = 1;
+        nextPos = -1;
 //        this.player1 = player1;
 //        this.player2 = player2;
         board = new int[9][3][3];
@@ -42,7 +44,7 @@ public class DefaultGame implements Game {
     }
 
     public boolean put(int board,int x, int y, int player) {
-        if(board != nextPos){
+        if(board != nextPos && nextPos != -1){
             return false;
         }
         if((player + 1) != currentPlayer){
@@ -51,9 +53,9 @@ public class DefaultGame implements Game {
         if(!isEmpty(board,x,y)){
             return false;
         }
-        this.board[board][x][y] = player;
+        this.board[board][x][y] = player + 1;
         changePlayer();
-        nextPos = y * 3 + x;
+        nextPos = x * 3 + y;
         return true;
     }
 

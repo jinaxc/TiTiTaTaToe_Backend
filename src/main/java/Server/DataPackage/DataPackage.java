@@ -48,6 +48,6 @@ public class DataPackage {
 
     @Override
     public String toString() {
-        return responseCode + Packages.SPLITTER + statusCode + Packages.SPLITTER + data;
+        return responseCode + "" + Packages.SPLITTER + statusCode + Packages.SPLITTER + data;
     }
 }
