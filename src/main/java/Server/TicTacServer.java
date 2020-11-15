@@ -1,5 +1,6 @@
 package Server;
 
+import Chess.User.Player;
 import Server.Handler.ChannelInactiveHandler;
 import Server.Handler.HttpRequestHandler;
 import Server.Handler.TextWebSocketFrameInboundHandler;
@@ -14,17 +15,17 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.timeout.IdleStateHandler;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.net.SocketAddress;
+import java.util.*;
 
 /**
  * @author jinaxCai
  */
 public class TicTacServer {
-    private final List<SocketChannel> channels;
+    private final Map<String, Player> playersIndexedByUsername;
+    private final Map<SocketAddress, Player> playersIndexedBySocketChannel;
+    private final Object lock;
 
     public static void main(String[] args) throws InterruptedException {
         new TicTacServer().start();
@@ -32,12 +33,60 @@ public class TicTacServer {
     }
 
     public TicTacServer() {
-        channels = Collections.synchronizedList(new ArrayList<SocketChannel>());
+        playersIndexedByUsername = new HashMap<>();
+        playersIndexedBySocketChannel = new HashMap<>();
+        lock = new Object();
     }
 
-    public List<SocketChannel> getChannels() {
-        return channels;
+    /**
+     *
+     * @return a list contain all the players
+     */
+    public List<Player> getAllUsers(){
+        return new ArrayList<>(playersIndexedByUsername.values());
     }
+
+    /**
+     * concurrency safe
+     * @param socketAddress socketAddress
+     * @return true if removed, false if not existed
+     */
+    public boolean removePlayerBySocketAddress(SocketAddress socketAddress){
+        synchronized (lock){
+            Player remove = playersIndexedBySocketChannel.remove(socketAddress);
+            if(remove == null){
+                return false;
+            }
+            playersIndexedByUsername.remove(remove.getUsername());
+            return true;
+        }
+    }
+
+    public Player getPlayerBySocketAddress(SocketAddress address){
+        return playersIndexedBySocketChannel.get(address);
+    }
+
+    public Player getPlayerByUsername(String username){
+        return playersIndexedByUsername.get(username);
+    }
+
+    /**
+     * concurrency safe
+     * @param player player to add
+     * @return if add success
+     */
+    public boolean addPlayer(Player player){
+        synchronized (lock){
+            if(playersIndexedByUsername.containsKey(player.getUsername())){
+                return false;
+            }else{
+                playersIndexedByUsername.put(player.getUsername(),player);
+                playersIndexedBySocketChannel.put(player.getSocketChannel().remoteAddress(),player);
+                return true;
+            }
+        }
+    }
+
 
     public void start() throws InterruptedException {
         EventLoopGroup bossGroup = new NioEventLoopGroup(); // (1)
@@ -56,7 +105,7 @@ public class TicTacServer {
 //                            pipeline.addLast(new IdleStateHandler(60,60, 0));
                             pipeline.addLast(new HttpServerCodec());
                             pipeline.addLast(new HttpObjectAggregator(64 * 1024));
-                            pipeline.addLast(new HttpRequestHandler("/ws"));
+                            pipeline.addLast(new HttpRequestHandler("/ws", s));
                             pipeline.addLast(new WebSocketServerProtocolHandler("/ws",null,true));
                             pipeline.addLast(new TextWebSocketFrameInboundHandler(s));
                             pipeline.addLast(new LineBasedFrameDecoder(1024));

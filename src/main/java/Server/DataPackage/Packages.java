@@ -9,6 +9,10 @@ import Server.Utils.StatusCode;
 public class Packages {
     public static final char SPLITTER = ' ';
 
+    public static DataPackage InvalidRequestPackage(){
+        return new DataPackage(ResponseCode.INVALID_REQUEST, StatusCode.FAIL,"");
+    }
+
     public static DataPackage ConnectionPackage(){
         return new DataPackage(ResponseCode.CONNECTION, StatusCode.SUCCESS,"");
     }
@@ -30,11 +34,29 @@ public class Packages {
         return new DataPackage(ResponseCode.PUT, StatusCode.SUCCESS,data.toString());
     }
 
-    public static DataPackage FailPutPackage(){
-        return new DataPackage(ResponseCode.PUT, StatusCode.FAIL,"");
+    public static DataPackage FailPutPackage(String info){
+        return new DataPackage(ResponseCode.PUT, StatusCode.FAIL,info);
     }
 
     public static DataPackage TimoutPackage(int playerCount){
         return new DataPackage(ResponseCode.TIMEOUT, StatusCode.FAIL,playerCount + "");
     }
+
+    public static DataPackage ReceiveInvitePackage(String username){
+        return new DataPackage(ResponseCode.RECEIVE_INVITE, StatusCode.SUCCESS,username);
+    }
+
+    public static DataPackage AnswerInvitePackage(boolean success,String username){
+        return new DataPackage(ResponseCode.ANSWER_INVITE, success?1 : 0,username);
+    }
+
+    public static DataPackage AllUsersPackage(String users){
+        return new DataPackage(ResponseCode.ALL_USERS, StatusCode.SUCCESS,users);
+    }
+
+    public static DataPackage ConfirmAnswerInvitePackage(boolean success,boolean isPositiveAnswer,String username){
+        return new DataPackage(ResponseCode.CONFIRM_ANSWER_INVITE, success ? StatusCode.SUCCESS : StatusCode.FAIL,(isPositiveAnswer ? 1 : 0) + username);
+    }
+
+
 }

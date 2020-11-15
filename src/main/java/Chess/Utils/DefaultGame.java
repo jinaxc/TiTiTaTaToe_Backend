@@ -1,7 +1,6 @@
 package Chess.Utils;
 
 import Chess.Game;
-import Chess.Player;
 
 /**
  * @author jinaxCai
