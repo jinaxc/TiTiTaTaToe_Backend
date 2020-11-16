@@ -34,7 +34,7 @@ public class NormalHttpRequestHandler extends SimpleChannelInboundHandler<FullHt
                 handleGet(ctx,request);
             case "POST":
                 handlePost(ctx,request);
-            case "OPTION":
+            case "OPTIONS":
                 handleOption(ctx,request);
             default:
                 //TODO
@@ -134,6 +134,6 @@ public class NormalHttpRequestHandler extends SimpleChannelInboundHandler<FullHt
             f.addListener(ChannelFutureListener.CLOSE);
             return null;
         }
-        return msg.uri().substring(index);
+        return msg.uri().substring(index + 1);
     }
 }
