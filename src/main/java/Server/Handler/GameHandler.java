@@ -26,6 +26,7 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
     private final static Logger LOGGER = LogManager.getLogger(GameHandler.class);
     private final SocketChannel[] channels;
     private Game game;
+    private int playerCount;
     private final TicTacServer server;
     public GameHandler(SocketChannel channel1, TicTacServer server) {
         this.server = server;
@@ -33,8 +34,9 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
         channels[0] = channel1;
     }
 
-    public void connect(SocketChannel channel2,Game game){
+    public void connect(SocketChannel channel2,Game game,int playerCount){
         channels[1] = channel2;
+        this.playerCount = playerCount;
         this.game = game;
     }
 
@@ -130,20 +132,21 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
                     source.writeAndFlush(new TextWebSocketFrame(Packages.ConfirmAnswerInvitePackage(true,true,opponent).toString()));
                     game = new DefaultGame();
                     channels[1] = player.getSocketChannel();
-                    ((GameHandler)channels[1].pipeline().get("gameHandler")).connect(source,game);
+                    ((GameHandler)channels[1].pipeline().get("gameHandler")).connect(source,game,1);
                     ChannelFuture channelFuture = channels[1].writeAndFlush(new TextWebSocketFrame(Packages.AnswerInvitePackage(true, current.getUsername()).toString()));
                     channelFuture.addListener(new GenericFutureListener<Future<? super Void>>() {
                         @Override
                         public void operationComplete(Future<? super Void> future) throws Exception {
                             LOGGER.info("game start");
                             channels[0].writeAndFlush(new TextWebSocketFrame(Packages.GameStartPackage(0).toString()));
+                            playerCount = 0;
                             channels[1].writeAndFlush(new TextWebSocketFrame(Packages.GameStartPackage(1).toString()));
                         }
                     });
                 }else{
                     channels[1] = player.getSocketChannel();
                     source.writeAndFlush(new TextWebSocketFrame(Packages.ConfirmAnswerInvitePackage(true,false,opponent).toString()));
-                    channels[1].writeAndFlush(new TextWebSocketFrame(Packages.AnswerInvitePackage(false,current.getUsername()).toString() + "拒绝了你的邀请"));
+                    channels[1].writeAndFlush(new TextWebSocketFrame(Packages.AnswerInvitePackage(false,current.getUsername()).toString() + " 拒绝了你的邀请"));
                 }
             }
         }
@@ -182,15 +185,7 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
         int boardCount = place1.charAt(0) - '0';
         int x = place1.charAt(1) - '0';
         int y = place1.charAt(2) - '0';
-        int player;
-        if(source == channels[0]){
-            player = 0;
-        }else if(source == channels[1]){
-            player = 1;
-        }else{
-            player = 0;
-            //TODO
-        }
+        int player = playerCount;
         boolean put = game.put(boardCount, x, y, player);
         if(!put){
             source.writeAndFlush(new TextWebSocketFrame(Packages.FailPutPackage("put failed").toString()));
