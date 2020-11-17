@@ -4,11 +4,14 @@ import Server.DataPackage.Packages;
 import Server.TicTacServer;
 import Server.Utils.RequestCode;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
+import io.netty.util.concurrent.ScheduledFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,12 +35,13 @@ public class TextWebSocketFrameInboundHandler extends SimpleChannelInboundHandle
                 .HandshakeComplete) {
             LOGGER.info("connection success from {}",ctx.channel().remoteAddress());
             ctx.pipeline().addLast("gameHandler",new GameHandler((SocketChannel) ctx.channel(),server));
-            ctx.pipeline().channel().eventLoop().scheduleAtFixedRate(new Runnable() {
+            ScheduledFuture<?> scheduledFuture = ctx.pipeline().channel().eventLoop().scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
-                    ctx.fireChannelRead(new TextWebSocketFrame(RequestCode.GET_USERS + ""));
+                    LOGGER.info("auto sending users");
+                    ctx.fireChannelRead(Unpooled.copiedBuffer((RequestCode.GET_USERS + "\n").getBytes()));
                 }
-            },15,15,TimeUnit.SECONDS);
+            }, 3, 15, TimeUnit.SECONDS);
             ctx.writeAndFlush(new TextWebSocketFrame(Packages.ConnectionPackage().toString()));
         } else {
             super.userEventTriggered(ctx, evt);
