@@ -36,13 +36,15 @@ public class TextWebSocketFrameInboundHandler extends SimpleChannelInboundHandle
                 .HandshakeComplete) {
             LOGGER.info("connection success from {}",ctx.channel().remoteAddress());
             ctx.pipeline().addLast("gameHandler",new GameHandler((SocketChannel) ctx.channel(),server));
-            scheduledFuture = ctx.pipeline().channel().eventLoop().scheduleAtFixedRate(new Runnable() {
-                @Override
-                public void run() {
-                    LOGGER.info("auto sending users");
-                    ctx.fireChannelRead(Unpooled.copiedBuffer((RequestCode.GET_USERS + "\n").getBytes()));
-                }
-            }, 3, 15, TimeUnit.SECONDS);
+            if(scheduledFuture == null){
+                scheduledFuture = ctx.pipeline().channel().eventLoop().scheduleAtFixedRate(new Runnable() {
+                    @Override
+                    public void run() {
+                        LOGGER.info("auto sending users");
+                        ctx.fireChannelRead(Unpooled.copiedBuffer((RequestCode.GET_USERS + "\n").getBytes()));
+                    }
+                }, 3, 15, TimeUnit.SECONDS);
+            }
             ctx.writeAndFlush(new TextWebSocketFrame(Packages.ConnectionPackage().toString()));
         } else {
             super.userEventTriggered(ctx, evt);

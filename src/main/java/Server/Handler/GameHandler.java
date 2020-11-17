@@ -137,7 +137,7 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
                         public void operationComplete(Future<? super Void> future) throws Exception {
                             LOGGER.info("game start");
                             channels[0].writeAndFlush(new TextWebSocketFrame(Packages.GameStartPackage(0).toString()));
-                            channels[1].writeAndFlush(new TextWebSocketFrame(Packages.GameStartPackage(0).toString()));
+                            channels[1].writeAndFlush(new TextWebSocketFrame(Packages.GameStartPackage(1).toString()));
                         }
                     });
                 }else{
