@@ -65,4 +65,8 @@ public class Packages {
     public static DataPackage GetUsernamePackage(boolean success,String data){
         return new DataPackage(ResponseCode.GET_USER_NAME, success ? 1 : 0,data);
     }
+
+    public static DataPackage GetOpponentPackage(boolean success,String data){
+        return new DataPackage(ResponseCode.GET_OPPONENT_NAME, success ? 1 : 0,data);
+    }
 }

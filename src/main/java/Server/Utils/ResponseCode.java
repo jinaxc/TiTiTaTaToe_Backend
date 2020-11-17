@@ -14,5 +14,6 @@ public class ResponseCode {
     public final static int CONFIRM_ANSWER_INVITE = 8;
     public final static int APPLY_USER_NAME = 9;
     public final static int GET_USER_NAME = 10;
+    public final static int GET_OPPONENT_NAME = 11;
     public final static int INVALID_REQUEST = 0;
 }

@@ -95,6 +95,19 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
                 }else{
                     source.writeAndFlush(new TextWebSocketFrame(Packages.GetUsernamePackage(true,player.getUsername()).toString()));
                 }
+                break;
+            }
+            case RequestCode.GET_OPPONENT_NAME:{
+                if(game == null){
+                    source.writeAndFlush(new TextWebSocketFrame(Packages.GetOpponentPackage(false,"游戏未开始").toString()));
+                }
+                Player player = server.getPlayerBySocketAddress(channels[1].remoteAddress());
+                if(player == null){
+                    source.writeAndFlush(new TextWebSocketFrame(Packages.GetOpponentPackage(false,"not login yet").toString()));
+                }else{
+                    source.writeAndFlush(new TextWebSocketFrame(Packages.GetOpponentPackage(true,player.getUsername()).toString()));
+                }
+                break;
             }
             default://TODO
         }
@@ -116,6 +129,9 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
     }
 
     private void handleAnswerInvite(SocketChannel source, String command, String[] s) {
+        if(game != null) {
+            return;
+        }
         LOGGER.info("receive message ANSWER_INVITE, message is {}",command);
         if(s.length < 3){
             source.writeAndFlush(new TextWebSocketFrame(Packages.InvalidRequestPackage().toString()));
@@ -153,6 +169,9 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
     }
 
     private void handleInvite(SocketChannel source, String command, String[] s) {
+        if(game != null) {
+            return;
+        }
         LOGGER.info("receive message INVITE, message is {}",command);
         if(s.length < 2){
             source.writeAndFlush(new TextWebSocketFrame(Packages.AnswerInvitePackage(false,"").toString()));
@@ -177,10 +196,11 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
         source.writeAndFlush(new TextWebSocketFrame(Packages.AllUsersPackage(result.toString()).toString()));
     }
 
+
     private void handlePut(SocketChannel source, String command, String place1) {
         LOGGER.info("receive message PUT, message is {}",command);
         if(channels[1] == null){
-            source.writeAndFlush(new TextWebSocketFrame(Packages.FailPutPackage("game is not started").toString()));
+            source.writeAndFlush(new TextWebSocketFrame(Packages.FailPutPackage("游戏尚未开始").toString()));
         }
         int boardCount = place1.charAt(0) - '0';
         int x = place1.charAt(1) - '0';
@@ -188,7 +208,7 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
         int player = playerCount;
         boolean put = game.put(boardCount, x, y, player);
         if(!put){
-            source.writeAndFlush(new TextWebSocketFrame(Packages.FailPutPackage("put failed").toString()));
+            source.writeAndFlush(new TextWebSocketFrame(Packages.FailPutPackage("落子失败").toString()));
         }else{
             int checkWin = game.checkWin();
             channels[0].writeAndFlush(new TextWebSocketFrame(Packages.SuccessPutPackage(player,game.getBoard(),game.getNextPos(),checkWin).toString()));
