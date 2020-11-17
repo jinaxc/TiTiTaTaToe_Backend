@@ -24,6 +24,7 @@ public class TextWebSocketFrameInboundHandler extends SimpleChannelInboundHandle
 
     private final static Logger LOGGER = LogManager.getLogger(TextWebSocketFrameInboundHandler.class);
     private final TicTacServer server;
+    private ScheduledFuture<?> scheduledFuture;
 
     public TextWebSocketFrameInboundHandler(TicTacServer server) {
         this.server = server;
@@ -35,7 +36,7 @@ public class TextWebSocketFrameInboundHandler extends SimpleChannelInboundHandle
                 .HandshakeComplete) {
             LOGGER.info("connection success from {}",ctx.channel().remoteAddress());
             ctx.pipeline().addLast("gameHandler",new GameHandler((SocketChannel) ctx.channel(),server));
-            ScheduledFuture<?> scheduledFuture = ctx.pipeline().channel().eventLoop().scheduleAtFixedRate(new Runnable() {
+            scheduledFuture = ctx.pipeline().channel().eventLoop().scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
                     LOGGER.info("auto sending users");
@@ -46,6 +47,14 @@ public class TextWebSocketFrameInboundHandler extends SimpleChannelInboundHandle
         } else {
             super.userEventTriggered(ctx, evt);
         }
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        if(scheduledFuture != null){
+            scheduledFuture.cancel(false);
+        }
+        ctx.fireChannelInactive();
     }
 
     @Override

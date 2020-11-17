@@ -40,11 +40,16 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        if(ctx.channel() == channels[0]){
-            channels[1].close();
-            //TODO
-        }else{
-            channels[0].close();
+        Player player = server.getPlayerBySocketAddress(ctx.channel().remoteAddress());
+        LOGGER.info("lose connection with {}",player.getUsername());
+        ChannelFuture future = channels[0].close();
+        future.addListener(new GenericFutureListener<Future<? super Void>>() {
+            @Override
+            public void operationComplete(Future<? super Void> future) throws Exception {
+                server.removePlayerBySocketAddress(channels[0].remoteAddress());
+            }
+        });
+        if(channels[1] != null){
             //TODO
         }
         ctx.fireChannelInactive();
@@ -78,7 +83,7 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
                 break;
             }
             case RequestCode.APPLY_USERNAME:{
-                handleApplyUsername(source, s);
+                handleApplyUsername(source,command, s);
                 break;
             }
             case RequestCode.GET_USERNAME:{
@@ -93,7 +98,8 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
         }
     }
 
-    private void handleApplyUsername(SocketChannel source, String[] s) {
+    private void handleApplyUsername(SocketChannel source, String command,String[] s) {
+        LOGGER.info("receive message APPLY_USERNAME, message is {}",command);
         if(s.length < 2){
             source.writeAndFlush(new TextWebSocketFrame(Packages.InvalidRequestPackage().toString()));
         }

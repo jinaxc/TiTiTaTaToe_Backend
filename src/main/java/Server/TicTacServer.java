@@ -101,7 +101,7 @@ public class TicTacServer {
                         @Override
                         public void initChannel(SocketChannel ch) {
                             ChannelPipeline pipeline = ch.pipeline();
-                            pipeline.addLast(new ChannelInactiveHandler(s));
+//                            pipeline.addLast(new ChannelInactiveHandler(s));
 //                            pipeline.addLast(new IdleStateHandler(60,60, 0));
                             pipeline.addLast(new HttpServerCodec());
                             pipeline.addLast(new HttpObjectAggregator(64 * 1024));
