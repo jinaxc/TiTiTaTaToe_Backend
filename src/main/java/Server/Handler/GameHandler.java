@@ -115,11 +115,11 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     private void handleAnswerInvite(SocketChannel source, String command, String[] s) {
         LOGGER.info("receive message ANSWER_INVITE, message is {}",command);
-        if(s.length < 2){
+        if(s.length < 3){
             source.writeAndFlush(new TextWebSocketFrame(Packages.InvalidRequestPackage().toString()));
         }else{
             int accept = Integer.parseInt(s[1].charAt(0) + "");
-            String opponent = s[1].substring(1);
+            String opponent = s[2];
             Player current = server.getPlayerBySocketAddress(source.remoteAddress());
             Player player = server.getPlayerByUsername(opponent);
             //the opponent may already close the connection
@@ -127,19 +127,22 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
                 source.writeAndFlush(new TextWebSocketFrame(Packages.ConfirmAnswerInvitePackage(false,accept == 1,"").toString()));
             }else{
                 if(accept == 1){
+                    source.writeAndFlush(new TextWebSocketFrame(Packages.ConfirmAnswerInvitePackage(true,true,"").toString()));
                     game = new DefaultGame();
                     channels[1] = player.getSocketChannel();
                     ((GameHandler)channels[1].pipeline().get("gameHandler")).connect(source,game);
-                    ChannelFuture channelFuture = channels[1].writeAndFlush(Packages.AnswerInvitePackage(true, current.getUsername()));
+                    ChannelFuture channelFuture = channels[1].writeAndFlush(new TextWebSocketFrame(Packages.AnswerInvitePackage(true, current.getUsername()).toString()));
                     channelFuture.addListener(new GenericFutureListener<Future<? super Void>>() {
                         @Override
                         public void operationComplete(Future<? super Void> future) throws Exception {
-                            channels[0].writeAndFlush(Packages.GameStartPackage(0));
-                            channels[1].writeAndFlush(Packages.GameStartPackage(0));
+                            LOGGER.info("game start");
+                            channels[0].writeAndFlush(new TextWebSocketFrame(Packages.GameStartPackage(0).toString()));
+                            channels[1].writeAndFlush(new TextWebSocketFrame(Packages.GameStartPackage(0).toString()));
                         }
                     });
                 }else{
-                    channels[1].writeAndFlush(Packages.AnswerInvitePackage(false,current.getUsername()));
+                    source.writeAndFlush(new TextWebSocketFrame(Packages.ConfirmAnswerInvitePackage(true,false,"").toString()));
+                    channels[1].writeAndFlush(new TextWebSocketFrame(Packages.AnswerInvitePackage(false,current.getUsername()).toString()));
                 }
             }
         }
