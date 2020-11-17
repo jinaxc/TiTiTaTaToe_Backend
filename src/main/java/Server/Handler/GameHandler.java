@@ -127,7 +127,7 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
                 source.writeAndFlush(new TextWebSocketFrame(Packages.ConfirmAnswerInvitePackage(false,accept == 1,"").toString()));
             }else{
                 if(accept == 1){
-                    source.writeAndFlush(new TextWebSocketFrame(Packages.ConfirmAnswerInvitePackage(true,true,"").toString()));
+                    source.writeAndFlush(new TextWebSocketFrame(Packages.ConfirmAnswerInvitePackage(true,true,opponent).toString()));
                     game = new DefaultGame();
                     channels[1] = player.getSocketChannel();
                     ((GameHandler)channels[1].pipeline().get("gameHandler")).connect(source,game);
@@ -141,8 +141,9 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
                         }
                     });
                 }else{
-                    source.writeAndFlush(new TextWebSocketFrame(Packages.ConfirmAnswerInvitePackage(true,false,"").toString()));
-                    channels[1].writeAndFlush(new TextWebSocketFrame(Packages.AnswerInvitePackage(false,current.getUsername()).toString()));
+                    channels[1] = player.getSocketChannel();
+                    source.writeAndFlush(new TextWebSocketFrame(Packages.ConfirmAnswerInvitePackage(true,false,opponent).toString()));
+                    channels[1].writeAndFlush(new TextWebSocketFrame(Packages.AnswerInvitePackage(false,current.getUsername()).toString() + "拒绝了你的邀请"));
                 }
             }
         }
@@ -157,7 +158,7 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
             Player current = server.getPlayerBySocketAddress(source.remoteAddress());
             Player player = server.getPlayerByUsername(opponent);
             if(player == null){
-                source.writeAndFlush(new TextWebSocketFrame(Packages.AnswerInvitePackage(false,"").toString()));
+                source.writeAndFlush(new TextWebSocketFrame(Packages.AnswerInvitePackage(false,"对方已经下线").toString()));
             }else{
                 player.getSocketChannel().writeAndFlush(new TextWebSocketFrame(Packages.ReceiveInvitePackage(current.getUsername()).toString()));
             }
