@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     private final static Logger LOGGER = LogManager.getLogger(HttpRequestHandler.class);
     private final String wsUri;
-    public HttpRequestHandler(String s, TicTacServer server) {
+    public HttpRequestHandler(String s) {
         this.wsUri = s;
     }
 
@@ -32,7 +32,15 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
             ctx.fireChannelRead(request.retain());
         }else{
             LOGGER.info("receive normal http request,uri : {},method : {}",request.uri(),request.method().name());
-            //TODO
+            DefaultFullHttpResponse defaultFullHttpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND,
+                    Unpooled.copiedBuffer("Uri Not Valid", CharsetUtil.UTF_8));
+            defaultFullHttpResponse.headers()
+                    .set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN)
+                    .set(HttpHeaderNames.CONTENT_LENGTH, defaultFullHttpResponse.content().readableBytes())
+                    .set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+
+            ChannelFuture f = ctx.writeAndFlush(defaultFullHttpResponse);
+            f.addListener(ChannelFutureListener.CLOSE);
         }
     }
 

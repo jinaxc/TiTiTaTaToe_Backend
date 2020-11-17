@@ -58,5 +58,11 @@ public class Packages {
         return new DataPackage(ResponseCode.CONFIRM_ANSWER_INVITE, success ? StatusCode.SUCCESS : StatusCode.FAIL,(isPositiveAnswer ? 1 : 0) + username);
     }
 
+    public static DataPackage ApplyUsernamePackage(boolean success,String data){
+        return new DataPackage(ResponseCode.APPLY_USER_NAME, success ? 1 : 0,data);
+    }
 
+    public static DataPackage GetUsernamePackage(boolean success,String data){
+        return new DataPackage(ResponseCode.GET_USER_NAME, success ? 1 : 0,data);
+    }
 }

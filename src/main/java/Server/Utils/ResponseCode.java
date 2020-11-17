@@ -12,5 +12,7 @@ public class ResponseCode {
     public final static int ANSWER_INVITE = 6;
     public final static int ALL_USERS = 7;
     public final static int CONFIRM_ANSWER_INVITE = 8;
+    public final static int APPLY_USER_NAME = 9;
+    public final static int GET_USER_NAME = 10;
     public final static int INVALID_REQUEST = 0;
 }

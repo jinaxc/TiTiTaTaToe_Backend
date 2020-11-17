@@ -3,7 +3,6 @@ package Server;
 import Chess.User.Player;
 import Server.Handler.ChannelInactiveHandler;
 import Server.Handler.HttpRequestHandler;
-import Server.Handler.NormalHttpRequestHandler;
 import Server.Handler.TextWebSocketFrameInboundHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -31,7 +30,6 @@ public class TicTacServer {
     public static void main(String[] args) throws InterruptedException {
         TicTacServer ticTacServer = new TicTacServer();
         ticTacServer.startWsServer();
-        ticTacServer.startHttpServer();
     }
 
     public TicTacServer() {
@@ -90,41 +88,6 @@ public class TicTacServer {
     }
 
 
-    public void startHttpServer() throws InterruptedException{
-        EventLoopGroup bossGroup = new NioEventLoopGroup(); // (1)
-        EventLoopGroup workerGroup = new NioEventLoopGroup(1);
-        try {
-            ServerBootstrap b = new ServerBootstrap(); // (2)
-            final TicTacServer s = this;
-            b.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class) // (3)
-                    .handler(new LoggingHandler(LogLevel.INFO))
-                    .childHandler(new ChannelInitializer<SocketChannel>() { // (4)
-                        @Override
-                        public void initChannel(SocketChannel ch) {
-                            ChannelPipeline pipeline = ch.pipeline();
-                            pipeline.addLast(new HttpServerCodec());
-                            pipeline.addLast(new HttpObjectAggregator(64 * 1024));
-                            pipeline.addLast(new NormalHttpRequestHandler(s));
-                        }
-                    })
-                    .option(ChannelOption.SO_BACKLOG, 128)          // (5)
-                    .childOption(ChannelOption.SO_KEEPALIVE, true); // (6)
-
-            // Bind and start to accept incoming connections.
-            ChannelFuture f = b.bind(8889).sync(); // (7)
-
-            // Wait until the server socket is closed.
-            // In this example, this does not happen, but you can do that to gracefully
-            // shut down your server.
-            f.channel().closeFuture().sync();
-        } finally {
-            workerGroup.shutdownGracefully();
-            bossGroup.shutdownGracefully();
-        }
-    }
-
-
     public void startWsServer() throws InterruptedException {
         EventLoopGroup bossGroup = new NioEventLoopGroup(); // (1)
         EventLoopGroup workerGroup = new NioEventLoopGroup(1);
@@ -142,7 +105,7 @@ public class TicTacServer {
 //                            pipeline.addLast(new IdleStateHandler(60,60, 0));
                             pipeline.addLast(new HttpServerCodec());
                             pipeline.addLast(new HttpObjectAggregator(64 * 1024));
-                            pipeline.addLast(new HttpRequestHandler("/ws", s));
+                            pipeline.addLast(new HttpRequestHandler("/ws"));
                             pipeline.addLast(new WebSocketServerProtocolHandler("/ws",null,true));
                             pipeline.addLast(new TextWebSocketFrameInboundHandler(s));
                             pipeline.addLast(new LineBasedFrameDecoder(1024));
@@ -158,10 +121,10 @@ public class TicTacServer {
             // In this example, this does not happen, but you can do that to gracefully
             // shut down your server.
 
-//            f.channel().closeFuture().sync();
+            f.channel().closeFuture().sync();
         } finally {
-//            workerGroup.shutdownGracefully();
-//            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+            bossGroup.shutdownGracefully();
         }
     }
 }

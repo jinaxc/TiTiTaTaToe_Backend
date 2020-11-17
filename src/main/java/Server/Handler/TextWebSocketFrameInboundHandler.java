@@ -2,6 +2,7 @@ package Server.Handler;
 
 import Server.DataPackage.Packages;
 import Server.TicTacServer;
+import Server.Utils.RequestCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -31,6 +32,12 @@ public class TextWebSocketFrameInboundHandler extends SimpleChannelInboundHandle
                 .HandshakeComplete) {
             LOGGER.info("connection success from {}",ctx.channel().remoteAddress());
             ctx.pipeline().addLast("gameHandler",new GameHandler((SocketChannel) ctx.channel(),server));
+            ctx.pipeline().channel().eventLoop().scheduleAtFixedRate(new Runnable() {
+                @Override
+                public void run() {
+                    ctx.fireChannelRead(new TextWebSocketFrame(RequestCode.GET_USERS + ""));
+                }
+            },15,15,TimeUnit.SECONDS);
             ctx.writeAndFlush(new TextWebSocketFrame(Packages.ConnectionPackage().toString()));
         } else {
             super.userEventTriggered(ctx, evt);
