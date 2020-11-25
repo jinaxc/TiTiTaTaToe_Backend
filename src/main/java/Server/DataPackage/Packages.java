@@ -3,6 +3,8 @@ package Server.DataPackage;
 import Server.Utils.ResponseCode;
 import Server.Utils.StatusCode;
 
+import javax.xml.crypto.Data;
+
 /**
  * @author jinaxCai
  */
@@ -68,5 +70,17 @@ public class Packages {
 
     public static DataPackage GetOpponentPackage(boolean success,String data){
         return new DataPackage(ResponseCode.GET_OPPONENT_NAME, success ? 1 : 0,data);
+    }
+
+    public static DataPackage SurrenderPackage(String name,int playerCount){
+        return new DataPackage(ResponseCode.SURRENDER,1,playerCount + "name");
+    }
+
+    public static DataPackage ApplyTiePackage(){
+        return new DataPackage(ResponseCode.APPLY_TIE,1,"");
+    }
+
+    public static DataPackage ReplyTiePackage(boolean accept){
+        return new DataPackage(ResponseCode.REPLY_TIE,1,(accept ? 1 : 0) + "");
     }
 }

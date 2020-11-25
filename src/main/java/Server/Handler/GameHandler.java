@@ -109,6 +109,30 @@ public class GameHandler extends SimpleChannelInboundHandler<ByteBuf> {
                 }
                 break;
             }
+            case RequestCode.SURRENDER:{
+                if(game == null){
+                    source.writeAndFlush(new TextWebSocketFrame(Packages.GetOpponentPackage(false,"游戏未开始").toString()));
+                }
+                source.writeAndFlush(new TextWebSocketFrame(Packages.SurrenderPackage(server.getPlayerBySocketAddress(source.remoteAddress()).getUsername(),2 - playerCount).toString()));
+                channels[1].writeAndFlush(new TextWebSocketFrame(Packages.SurrenderPackage(server.getPlayerBySocketAddress(source.remoteAddress()).getUsername(),2 - playerCount).toString()));
+            }
+            case RequestCode.ASK_TIE:{
+                if(game == null){
+                    source.writeAndFlush(new TextWebSocketFrame(Packages.GetOpponentPackage(false,"游戏未开始").toString()));
+                }
+                channels[1].writeAndFlush(new TextWebSocketFrame(Packages.ApplyTiePackage().toString()));
+            }
+            case RequestCode.REPLAY_TIE:{
+                if(game == null){
+                    source.writeAndFlush(new TextWebSocketFrame(Packages.GetOpponentPackage(false,"游戏未开始").toString()));
+                }
+                if(s.length < 2){
+                    source.writeAndFlush(new TextWebSocketFrame(Packages.InvalidRequestPackage().toString()));
+                }
+                boolean accept = Integer.parseInt(s[1]) == 1;
+                source.writeAndFlush(new TextWebSocketFrame(Packages.ReplyTiePackage(accept).toString()));
+                channels[1].writeAndFlush(new TextWebSocketFrame(Packages.ReplyTiePackage(accept).toString()));
+            }
             default://TODO
         }
     }

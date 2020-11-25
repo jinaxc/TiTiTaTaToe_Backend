@@ -11,4 +11,8 @@ public class RequestCode {
     public final static int APPLY_USERNAME = 5;
     public final static int GET_USERNAME = 6;
     public final static int GET_OPPONENT_NAME = 7;
+    public final static int SURRENDER = 8;
+    public final static int ASK_TIE =9;
+    public final static int REPLAY_TIE = 10;
+
 }
